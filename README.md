@@ -1,5 +1,7 @@
 # Big Red Button
 
+![The Big Game Button next to a Mac and a Raspberry Pi](docs/images/poster.jpg)
+
 Setup software for the Big Game Button with Enclosure 100mm USB from Little Bird Electronics, in [red](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-c), [green](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-green), [blue](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-blue), [yellow](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-yellow) and [white](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-white). Setup guide: <https://littlebirdelectronics.com.au/projects/big-game-button-setup>.
 
 Out of the box the button is a one-key USB keyboard: press it and it types **Enter**. This software makes it do something else (a buzzer sound, a keyboard shortcut, a command, a website), and only for the button. Your normal keyboard's Enter key keeps working.
@@ -21,6 +23,10 @@ curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
 ### macOS
 
 The installer puts **Big Red Button.app** in Applications and opens it. Look for the little button in the menu bar; **Button Colour** matches it to your button.
+
+<img src="docs/images/app-menu.png" alt="The Big Red Button menu bar app" width="415">
+
+<img src="docs/images/icon-colours.png" alt="The menu bar icon in red, green, blue, yellow and white" width="525">
 
 1. macOS asks to let Big Red Button **receive keystrokes** (Input Monitoring). Click **Open System Settings** and switch **Big Red Button** on. This is how the app sees the button being pressed.
 2. Plug the button in and press it. You'll hear a game-show buzzer.

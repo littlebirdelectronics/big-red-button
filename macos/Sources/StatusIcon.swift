@@ -22,8 +22,9 @@ enum ButtonColor: String, CaseIterable {
     }
 }
 
-/// Menu bar icon: the button seen from the side, a squat enclosure with a coloured dome on top.
-/// The dome sinks when pressed and turns into an empty outline when the button isn't connected.
+/// Menu bar icon: the button seen from the side, like the real thing: a squarish black
+/// enclosure, a bezel ring, and a coloured dome on top. The dome sinks when pressed and turns
+/// into an empty outline when the button isn't connected.
 enum StatusIcon {
     static let size = NSSize(width: 20, height: 18)
 
@@ -40,23 +41,25 @@ enum StatusIcon {
     /// follows the light or dark menu bar.
     static func draw(color: ButtonColor, connected: Bool, pressed: Bool) {
         let ink = NSColor.labelColor
-        let collarTop: CGFloat = 9.5
+        let collarTop: CGFloat = 11.2
 
-        // Enclosure: a wide, low box.
+        // Enclosure: a near-cube box, with the lid seam the real one has.
         ink.withAlphaComponent(connected ? 0.85 : 0.4).setFill()
-        NSBezierPath(roundedRect: NSRect(x: 1, y: 1.5, width: 18, height: 6.5), xRadius: 2.2, yRadius: 2.2).fill()
+        NSBezierPath(roundedRect: NSRect(x: 2.5, y: 1, width: 15, height: 8.6), xRadius: 1.6, yRadius: 1.6).fill()
+        NSColor.windowBackgroundColor.withAlphaComponent(connected ? 0.35 : 0.2).setFill()
+        NSRect(x: 2.5, y: 6.6, width: 15, height: 0.6).fill()
 
-        // Bezel collar between the box and the dome.
-        ink.withAlphaComponent(connected ? 0.5 : 0.25).setFill()
-        NSBezierPath(roundedRect: NSRect(x: 3.5, y: 8, width: 13, height: collarTop - 8), xRadius: 0.7, yRadius: 0.7).fill()
+        // Bezel ring around the base of the dome.
+        ink.withAlphaComponent(connected ? 0.6 : 0.3).setFill()
+        NSBezierPath(roundedRect: NSRect(x: 3.6, y: 9.6, width: 12.8, height: collarTop - 9.6), xRadius: 0.8, yRadius: 0.8).fill()
 
-        // Dome: the top half of an ellipse sitting on the collar. Lower when pressed.
-        let domeHeight: CGFloat = pressed ? 3.5 : 6.5
+        // Dome: the top half of an ellipse sitting on the bezel. Lower when pressed.
+        let domeHeight: CGFloat = pressed ? 3 : 5.6
         let dome = NSBezierPath()
         dome.appendArc(withCenter: .zero, radius: 1, startAngle: 0, endAngle: 180)
         dome.close()
         var transform = AffineTransform(translationByX: 10, byY: collarTop)
-        transform.scale(x: 5.5, y: domeHeight)
+        transform.scale(x: 5.6, y: domeHeight)
         dome.transform(using: transform)
 
         if connected {
@@ -64,7 +67,7 @@ enum StatusIcon {
             dome.fill()
             // Specular highlight so it reads as a glossy cap rather than a flat dot.
             NSColor.white.withAlphaComponent(0.55).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 6.6, y: collarTop + domeHeight * 0.45, width: 3.2, height: max(1.2, domeHeight * 0.28))).fill()
+            NSBezierPath(ovalIn: NSRect(x: 6.5, y: collarTop + domeHeight * 0.42, width: 3.2, height: max(1.1, domeHeight * 0.28))).fill()
             // Thin edge so the white and yellow caps stay visible on a light menu bar.
             ink.withAlphaComponent(0.35).setStroke()
             dome.lineWidth = 0.75
