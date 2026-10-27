@@ -1,6 +1,6 @@
 # Big Red Button
 
-Setup software for the [Big Game Button with Enclosure 100mm USB Red](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-c) (SKU LB-LS7008-R) from Little Bird Electronics.
+Setup software for the Big Game Button with Enclosure 100mm USB from Little Bird Electronics, in [red](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-c), [green](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-green), [blue](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-blue), [yellow](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-yellow) and [white](https://littlebirdelectronics.com.au/products/big-game-button-with-enclosure-100mm-usb-white). Setup guide: <https://littlebirdelectronics.com.au/help/big-red-button-setup>.
 
 Out of the box the button is a one-key USB keyboard: press it and it types **Enter**. This software makes it do something else (a buzzer sound, a keyboard shortcut, a command, a website), and only for the button. Your normal keyboard's Enter key keeps working.
 
@@ -20,11 +20,11 @@ curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
 
 ### macOS
 
-The installer puts **Big Red Button.app** in Applications and opens it. Look for the red dot in the menu bar.
+The installer puts **Big Red Button.app** in Applications and opens it. Look for the little button in the menu bar; **Button Colour** matches it to your button.
 
 1. macOS asks to let Big Red Button **receive keystrokes** (Input Monitoring). Click **Open System Settings** and switch **Big Red Button** on. This is how the app sees the button being pressed.
 2. Plug the button in and press it. You'll hear a game-show buzzer.
-3. Click the red dot to choose what the button does:
+3. Click the menu bar button to choose what the button does:
    - **Press a keyboard shortcut**: record any shortcut, e.g. ⌘⇧4 or Space. The keys stay held while the button is held, so it works as push-to-talk.
    - **Type some text**
    - **Run a shell command**, e.g. `say "Time's up"`, `shortcuts run "My Shortcut"`, `open -a Calculator`
