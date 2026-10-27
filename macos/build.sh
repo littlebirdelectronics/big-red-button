@@ -28,10 +28,23 @@ sed "s/__VERSION__/$VERSION/g" Info.plist > "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 cp Resources/Sounds/*.wav "$APP/Contents/Resources/Sounds/"
 
+# The hardened runtime refuses Apple Events (osascript in a "command" action) without this entitlement.
+ENTITLEMENTS="$BUILD/BigRedButton.entitlements"
+cat > "$ENTITLEMENTS" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+</dict>
+</plist>
+EOF
+
 if [ "$SIGN_ID" = "-" ]; then
-  codesign --force --sign - "$APP"
+  codesign --force --entitlements "$ENTITLEMENTS" --sign - "$APP"
 else
-  codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$APP"
+  codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGN_ID" "$APP"
 fi
 codesign --verify --strict --verbose=2 "$APP"
 

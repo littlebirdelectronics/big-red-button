@@ -53,7 +53,8 @@ final class ButtonMonitor {
         IOHIDManagerRegisterInputValueCallback(mgr, { ctx, _, _, value in
             Unmanaged<ButtonMonitor>.fromOpaque(ctx!).takeUnretainedValue().received(value)
         }, ctx)
-        IOHIDManagerScheduleWithRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+        // Common modes, so presses still arrive while our menu or a dialog is open.
+        IOHIDManagerScheduleWithRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
         let result = IOHIDManagerOpen(mgr, IOOptionBits(kIOHIDOptionsTypeNone))
         isListening = result == kIOReturnSuccess && Self.hasInputMonitoringAccess
         if !isListening {
@@ -64,13 +65,17 @@ final class ButtonMonitor {
 
     func stop() {
         if let mgr = manager {
-            IOHIDManagerUnscheduleFromRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
+            IOHIDManagerUnscheduleFromRunLoop(mgr, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)
             IOHIDManagerClose(mgr, IOOptionBits(kIOHIDOptionsTypeNone))
         }
         manager = nil
         isListening = false
         devices.removeAll()
-        held.removeAll()
+        // We won't hear the release once the manager is closed, so don't leave a held key combo stuck down.
+        if !held.isEmpty {
+            held.removeAll()
+            onRelease?()
+        }
         setConnected(false)
     }
 

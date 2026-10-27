@@ -10,7 +10,7 @@ It's a single program with no dependencies. It works on every Raspberry Pi (Zero
 curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
 ```
 
-This installs `/usr/local/bin/bigredbutton`, a `bigredbutton` systemd service, and a config file at `/etc/bigredbutton.json`. Commands run as the user who ran the installer.
+This installs `/usr/local/bin/bigredbutton`, a `bigredbutton` systemd service, and a config file at `/etc/bigredbutton.json`. Commands run as the user who ran the installer, or, if that was a root shell opened with `sudo` or `su`, the account you logged in with.
 
 Plug the button in with the **supplied USB-A to USB-C cable**. It won't power up on a USB-C to USB-C cable. On a Pi Zero, use a micro-USB OTG adapter.
 
@@ -62,7 +62,7 @@ Modifiers are `ctrl`, `shift`, `alt` and `super`. Join names with `+`, e.g. `ctr
 
 - Commands run with `/bin/sh -c` as the `run_as` user, with that user's `HOME`, so `~` and `$HOME` work.
 - Each press starts a new copy of the command, without waiting for the last one to finish.
-- Desktop programs work too: the command gets `DISPLAY`, `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR` and the session bus of the user who's logged in to the desktop.
+- Desktop programs work too, as long as `run_as` is the user who's logged in to the desktop: the command gets `DISPLAY=:0`, plus `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR` and the session bus from that user's session in `/run/user/<uid>`. Commands run as root get none of these, so desktop programs and sound through PipeWire need `run_as` set to the desktop user.
 - Output and errors go to the service log.
 
 Keys and text go through a virtual keyboard ("Big Red Button (virtual)"), so they work on X11 and Wayland desktops and on the text console.
@@ -87,7 +87,7 @@ Keys and text go through a virtual keyboard ("Big Red Button (virtual)"), so the
 | `action` | `enter` (default, button untouched), `none`, `keys`, `text` or `command` |
 | `keys` / `text` / `command` | Used by the matching action. The others are kept so you can switch back. |
 | `run_as` | User that commands run as. Leave it out or use `root` to run as root. |
-| `device` | Optional USB IDs, if your button reports different ones (`bigredbutton status` shows what's connected) |
+| `device` | Optional USB IDs, if your button reports different ones. Write them as decimal numbers: `lsusb` shows them in hex (e.g. `1a86:e026`), and `printf '%d %d\n' 0x1a86 0xe026` converts them. The Big Red Button's `8189:0019` is `33161` and `25`. |
 
 After editing the file by hand, run `sudo systemctl restart bigredbutton`.
 
@@ -95,7 +95,7 @@ After editing the file by hand, run `sudo systemctl restart bigredbutton`.
 
 ```sh
 bigredbutton status                 # config, whether the button is plugged in, service state
-journalctl -u bigredbutton -f       # live log: presses, commands, errors
+sudo journalctl -u bigredbutton -f  # live log: presses, commands, errors
 ```
 
 To watch raw presses, stop the service first, because only one program can hold the button:
@@ -110,7 +110,7 @@ sudo systemctl start bigredbutton
 
 - **"Button: not found"**: the button only works with the supplied USB-A to USB-C cable (or another USB-A to USB-C cable). With a USB-C to USB-C cable it gets no power, and its light won't come on when pressed. `lsusb` should list `8189:0019`.
 - **Keys or text don't appear**: check the log for a uinput error. Run `sudo modprobe uinput` and restart the service.
-- **A command works in a terminal but not from the button**: it probably needs something from your login shell. Use full paths, and check `journalctl -u bigredbutton` for its error output.
+- **A command works in a terminal but not from the button**: it probably needs something from your login shell. Use full paths, and check `sudo journalctl -u bigredbutton` for its error output.
 
 ## Uninstall
 

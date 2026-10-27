@@ -131,6 +131,9 @@ func SaveConfig(path string, c Config) error {
 	if data, err := os.ReadFile(path); err == nil {
 		_ = json.Unmarshal(data, &merged)
 	}
+	if merged == nil { // the file held a bare "null"
+		merged = map[string]json.RawMessage{}
+	}
 	known, err := json.Marshal(c)
 	if err != nil {
 		return err

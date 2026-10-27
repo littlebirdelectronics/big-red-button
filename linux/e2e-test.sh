@@ -5,11 +5,17 @@
 #   ./build.sh && podman machine ssh "sudo modprobe uinput && sudo $PWD/e2e-test.sh"
 set -u
 cd "$(dirname "$0")"
+# input_event is 16 bytes for 32-bit programs and 24 for 64-bit ones. Go by the userland, not
+# uname: 32-bit Raspberry Pi OS can run a 64-bit (aarch64) kernel.
+BITS=$(getconf LONG_BIT 2>/dev/null || echo 64)
 case "$(uname -m)" in
-  aarch64|arm64) B=$PWD/dist/bigredbutton-linux-arm64 ;;
-  x86_64) B=$PWD/dist/bigredbutton-linux-amd64 ;;
-  *) B=$PWD/dist/bigredbutton-linux-armv6 ;;
+  aarch64|arm64) [ "$BITS" = 64 ] && arch=arm64 || arch=armv6 ;;
+  x86_64) arch=amd64 ;;
+  *) arch=armv6 ;;
 esac
+B=${B:-$PWD/dist/bigredbutton-linux-$arch}
+if [ "$BITS" = 32 ]; then ES=16; else ES=24; fi
+TF=$((ES / 2 - 3)) # u2 column of the event type; code and value-low follow it
 [ "$(id -u)" = 0 ] || { echo "run as root"; exit 1; }
 RUN_AS_USER=${RUN_AS_USER:-$(getent passwd 1000 | cut -d: -f1)}
 if [ -z "$RUN_AS_USER" ] && [ "${CREATE_TEST_USER:-}" = 1 ]; then
@@ -35,14 +41,13 @@ $B run -config "$T/keys.json" > "$T/keys.log" 2>&1 & D=$!
 sleep 1
 VN=$(virtual_node)
 check "virtual keyboard exists" '[ -n "$VN" ]'
-timeout 12 dd if="/dev/input/$VN" of="$T/keys.bin" bs=24 2>/dev/null &
+timeout 12 dd if="/dev/input/$VN" of="$T/keys.bin" bs=$ES 2>/dev/null &
 $B __emulate-button > /dev/null &
 E=$!
 sleep 3.5
 timeout 2 $B listen > "$T/listen.log" 2>&1
 wait $E; sleep 1; kill $D; wait
-# u2 columns 9-11 are type, code, value-low for 24-byte events.
-od -An -v -w24 -tu2 "$T/keys.bin" | awk '$9 == 1 { print $10, $11 }' > "$T/keys.txt"
+od -An -v -w$ES -tu2 "$T/keys.bin" | awk -v t=$TF '$t == 1 { print $(t + 1), $(t + 2) }' > "$T/keys.txt"
 check "first press is ctrl, alt, t down" '[ "$(head -3 "$T/keys.txt" | tr "\n" " ")" = "29 1 56 1 20 1 " ]'
 check "then t, alt, ctrl up" '[ "$(sed -n 4,6p "$T/keys.txt" | tr "\n" " ")" = "20 0 56 0 29 0 " ]'
 n=$(wc -l < "$T/keys.txt"); check "5 presses -> 30 key events (got $n)" "[ $n = 30 ]"
@@ -53,10 +58,10 @@ echo '{"action":"text","text":"Hi!"}' > "$T/text.json"
 $B run -config "$T/text.json" > "$T/text.log" 2>&1 & D=$!
 sleep 1
 VN=$(virtual_node)
-timeout 7 dd if="/dev/input/$VN" of="$T/text.bin" bs=24 2>/dev/null &
+timeout 7 dd if="/dev/input/$VN" of="$T/text.bin" bs=$ES 2>/dev/null &
 $B __emulate-button > /dev/null
 sleep 1; kill $D; wait
-od -An -v -w24 -tu2 "$T/text.bin" | awk '$9 == 1 { print $10, $11 }' | head -8 | tr '\n' ' ' > "$T/text.txt"
+od -An -v -w$ES -tu2 "$T/text.bin" | awk -v t=$TF '$t == 1 { print $(t + 1), $(t + 2) }' | head -8 | tr '\n' ' ' > "$T/text.txt"
 # H = shift+h(35), i = 23, ! = shift+1(2)
 check "types H i ! with shift" '[ "$(cat "$T/text.txt")" = "42 1 35 1 35 0 42 0 23 1 23 0 42 1 2 1 " ]'
 
@@ -79,7 +84,7 @@ wait $E; kill $D; wait
 check "enter mode doesn't grab" 'grep -q "Button connected" "$T/listen-enter.log"'
 
 echo "== set / status"
-$B set none -config "$T/set.json" > /dev/null
+$B -config "$T/set.json" set none > /dev/null
 check "set none writes the config" 'grep -q "\"action\": \"none\"" "$T/set.json"'
 check "status reports the button missing" '$B status -config "$T/set.json" | grep -q "not found"'
 

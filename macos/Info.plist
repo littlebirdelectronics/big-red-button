@@ -28,6 +28,8 @@
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Commands you set for the button can control other apps.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Little Bird Electronics</string>
 </dict>

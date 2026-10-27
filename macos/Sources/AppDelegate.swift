@@ -38,7 +38,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: - Button
 
     private func buttonDown() {
-        store.reloadIfChanged()
+        // We're inside the HID callback, which update() may tear down, so apply the new config just after it.
+        if store.reloadIfChanged() {
+            DispatchQueue.main.async { [weak self] in self?.applyLoadedConfig() }
+        }
         let config = store.config
         pressedConfig = config
         isPressed = true
@@ -82,12 +85,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         refreshIcon()
     }
 
+    /// Brings the key mapping and device matching in line with a config just re-read from disk.
+    private func applyLoadedConfig() {
+        monitor.update(device: store.config.resolvedDevice, suppressKey: store.config.suppressesKey)
+        refreshIcon()
+    }
+
     // MARK: - Menu
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        if store.reloadIfChanged() {
-            monitor.update(device: store.config.resolvedDevice, suppressKey: store.config.suppressesKey)
-        }
+        if store.reloadIfChanged() { applyLoadedConfig() }
         menu.removeAllItems()
         let config = store.config
 
@@ -361,7 +368,7 @@ final class ShortcutRecorder: NSObject, NSWindowDelegate {
         window.delegate = self
         let heading = NSTextField(labelWithString: "Press the shortcut the button should send.")
         heading.font = .boldSystemFont(ofSize: 13)
-        label.stringValue = current.map { "Current: \(KeyCombo.display($0))   ·   Esc to cancel" } ?? "e.g. ⌘⇧4, Space, F13   ·   Esc to cancel"
+        label.stringValue = current.map { "Current: \(KeyCombo.display($0))   ·   Esc to cancel" } ?? "e.g. ⌃⌥T, Space, F13   ·   Esc to cancel"
         label.textColor = .secondaryLabelColor
         let stack = NSStackView(views: [heading, label])
         stack.orientation = .vertical

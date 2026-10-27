@@ -138,14 +138,13 @@ enum Log {
     static func write(_ message: String) {
         let line = "\(ISO8601DateFormatter().string(from: Date())) \(message)\n"
         NSLog("%@", message)
-        guard let data = line.data(using: .utf8) else { return }
-        if let handle = try? FileHandle(forWritingTo: url) {
-            handle.seekToEndOfFile()
-            handle.write(data)
-            try? handle.close()
-        } else {
-            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? data.write(to: url)
-        }
+        try? appendHandle()?.write(contentsOf: Data(line.utf8))
+    }
+
+    /// Opens the log with O_APPEND, so every write lands at the end, including output from commands we run.
+    static func appendHandle() -> FileHandle? {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let fd = open(url.path, O_WRONLY | O_APPEND | O_CREAT, 0o644)
+        return fd < 0 ? nil : FileHandle(fileDescriptor: fd, closeOnDealloc: true)
     }
 }

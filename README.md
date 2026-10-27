@@ -40,7 +40,7 @@ The installer puts **Big Red Button.app** in Applications and opens it. Look for
 
 Shortcuts and typing need one more permission, **Accessibility**, which the app asks for when you pick those options. The app starts at login. Settings live in `~/Library/Application Support/BigRedButton/config.json`.
 
-**How it works:** the app watches the button over USB HID (Input Monitoring) and uses macOS's built-in per-device key remapping (the mechanism behind `hidutil`) to silence the button's own Enter key. Nothing is installed outside the app, and quitting the app turns the button back into a plain Enter key.
+**How it works:** the app watches the button over USB HID (Input Monitoring) and uses macOS's built-in per-device key remapping (the mechanism behind `hidutil`) to silence the button's own Enter key. Nothing is installed outside the app, and quitting the app turns the button back into a plain Enter key. If the app is force-quit or crashes, the button stays silent until you unplug it and plug it back in, or open the app again.
 
 ### Linux and Raspberry Pi
 
@@ -57,11 +57,11 @@ sudo bigredbutton set enter              # back to a normal Enter key
 
 sudo bigredbutton test                   # try the action without pressing the button
 bigredbutton status                      # is the button connected?
-bigredbutton listen                      # show presses live (stop the service first)
-journalctl -u bigredbutton -f            # service log
+sudo bigredbutton listen                 # show presses live (stop the service first)
+sudo journalctl -u bigredbutton -f       # service log
 ```
 
-Commands run as the user who installed it, not root. The service grabs the button exclusively, so its Enter key never reaches other programs. Settings live in `/etc/bigredbutton.json`. See [linux/README.md](linux/README.md) for more.
+Commands run as the user who ran the installer. If that was a root shell you opened with `sudo` or `su`, they run as the account you logged in with, not root. The service grabs the button exclusively, so its Enter key never reaches other programs. Settings live in `/etc/bigredbutton.json`. See [linux/README.md](linux/README.md) for more.
 
 ### Windows
 
@@ -99,6 +99,7 @@ Key names: `ctrl`, `alt`/`option`, `shift`, `cmd`/`super`/`win`, `a`–`z`, `0`�
 ## Troubleshooting
 
 - **Nothing happens, and the button doesn't light up when pressed:** it isn't getting power. Use the supplied USB-A to USB-C cable.
+- **On a Mac the button lights up but does nothing, and the menu bar icon is gone:** the app isn't running (for example it was force-quit), so the button is still silenced. Open Big Red Button again, or unplug the button and plug it back in to get a plain Enter key.
 - **macOS menu says "Needs Input Monitoring permission":** System Settings → Privacy & Security → Input Monitoring → switch on Big Red Button.
 - **macOS shows "Keyboard Setup Assistant" when the button is plugged in:** close it. The button is a one-key keyboard and can't answer it.
 - **You also use Karabiner-Elements on macOS:** in Karabiner's Devices settings, turn off "Modify events" for *USB Keyboard (LinTx)*.

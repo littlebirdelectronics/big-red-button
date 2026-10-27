@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ Usage:
   bigredbutton run                                  run the daemon (systemd does this for you)
   bigredbutton version
 
-Options:
+Options (put them before the command, e.g. bigredbutton -config <path> set none):
   -config <path>   config file (default /etc/bigredbutton.json)
 
 Key names: a-z 0-9 f1-f24 enter space tab esc backspace delete insert home end
@@ -32,7 +33,7 @@ pageup pagedown up down left right minus equal leftbracket rightbracket backslas
 semicolon quote comma period slash grave capslock printscreen volumeup volumedown
 mute playpause next previous stop, plus modifiers ctrl shift alt super.
 
-Commands run as the "run_as" user in the config file. Logs: journalctl -u bigredbutton -f
+Commands run as the "run_as" user in the config file. Logs: sudo journalctl -u bigredbutton -f
 Help: https://littlebirdelectronics.com.au/projects/big-game-button-setup
 `
 
@@ -45,6 +46,12 @@ func runCLI(args []string) int {
 	var pos []string
 	for i := 0; i < len(args); i++ {
 		a := args[i]
+		if len(pos) == 2 && pos[0] == "set" {
+			// Everything after "set <action>" is the value, word for word, even a program's
+			// own --config flag.
+			pos = append(pos, args[i:]...)
+			break
+		}
 		switch {
 		case a == "-config" || a == "--config":
 			if i+1 >= len(args) {
@@ -92,14 +99,16 @@ func cmdSet(cfgPath string, args []string) int {
 		fmt.Fprintln(os.Stderr, "Usage: sudo bigredbutton set enter|none|command|keys|text [value]")
 		return 2
 	}
-	if os.Geteuid() != 0 && cfgPath == defaultConfigPath {
+	isDefault := filepath.Clean(cfgPath) == defaultConfigPath
+	if os.Geteuid() != 0 && isDefault {
 		fmt.Fprintf(os.Stderr, "Changing the button needs root. Run:\n  sudo bigredbutton set %s\n", shellQuoteArgs(args))
 		return 1
 	}
 	cfg, _, err := LoadConfig(cfgPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Ignoring unreadable config: %v\n", err)
-		cfg = Config{}
+		// Rebuilding it would quietly drop run_as, so commands would run as root.
+		fmt.Fprintf(os.Stderr, "Can't read the current config, so nothing was changed: %v\nFix %s and run this again.\n", err, cfgPath)
+		return 1
 	}
 	action := strings.ToLower(args[0])
 	value := strings.Join(args[1:], " ")
@@ -110,6 +119,11 @@ func cmdSet(cfgPath string, args []string) int {
 			return 2
 		}
 	case ActionCommand:
+		if len(args) > 2 {
+			// Unquoted words have lost the user's shell quoting, so quote each one again
+			// for /bin/sh -c.
+			value = shellQuoteArgs(args[1:])
+		}
 		cfg.Command = value
 	case ActionKeys:
 		cfg.Keys = value
@@ -129,6 +143,9 @@ func cmdSet(cfgPath string, args []string) int {
 		return 1
 	}
 	fmt.Printf("Saved %s: the button %s\n", cfgPath, cfg.Summary())
+	if !isDefault {
+		return 0 // the service only reads the default config
+	}
 	if err := restartService(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1
@@ -168,7 +185,7 @@ func cmdStatus(cfgPath string) int {
 func shellQuoteArgs(args []string) string {
 	out := make([]string, len(args))
 	for i, a := range args {
-		if a == "" || strings.ContainsAny(a, " \t'\"$`\\!&;|<>()*?[]#~") {
+		if a == "" || strings.ContainsAny(a, " \t\n\r'\"$`\\!&;|<>(){}*?[]#~") {
 			out[i] = "'" + strings.ReplaceAll(a, "'", `'\''`) + "'"
 		} else {
 			out[i] = a

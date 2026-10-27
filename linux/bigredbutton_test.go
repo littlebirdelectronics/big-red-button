@@ -145,6 +145,19 @@ func TestConfigRoundTripKeepsUnknownFields(t *testing.T) {
 	}
 }
 
+func TestSaveConfigOverNullFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "bigredbutton.json")
+	if err := os.WriteFile(path, []byte("null\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveConfig(path, Config{Action: ActionNone, RunAs: "pi"}); err != nil {
+		t.Fatal(err)
+	}
+	if cfg, _, err := LoadConfig(path); err != nil || cfg.Action != ActionNone || cfg.RunAs != "pi" {
+		t.Errorf("reload = %+v, %v", cfg, err)
+	}
+}
+
 func TestLoadMissingConfigMeansEnter(t *testing.T) {
 	cfg, exists, err := LoadConfig(filepath.Join(t.TempDir(), "nope.json"))
 	if err != nil || exists || cfg.Action != ActionEnter || cfg.Grabs() {
@@ -246,7 +259,7 @@ func TestFindNodes(t *testing.T) {
 func TestCLISet(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "c.json")
 	os.WriteFile(path, []byte(`{"action":"enter","run_as":"pi"}`), 0o644)
-	if code := runCLI([]string{"set", "command", "aplay", "/tmp/x.wav", "-config", path}); code != 0 {
+	if code := runCLI([]string{"-config", path, "set", "command", "aplay", "/tmp/x.wav"}); code != 0 {
 		t.Fatalf("set command exit %d", code)
 	}
 	cfg, _, _ := LoadConfig(path)
@@ -259,14 +272,66 @@ func TestCLISet(t *testing.T) {
 	if cfg2, _, _ := LoadConfig(path); cfg2.Action != ActionCommand {
 		t.Errorf("failed set must not change the file: %+v", cfg2)
 	}
-	if code := runCLI([]string{"set", "enter", "extra", "-config", path}); code != 2 {
+	if code := runCLI([]string{"-config", path, "set", "enter", "extra"}); code != 2 {
 		t.Errorf("enter with a value: exit %d", code)
 	}
-	if code := runCLI([]string{"set", "keys", "ctrl+alt+t", "-config", path}); code != 0 {
+	if code := runCLI([]string{"set", "-config", path, "keys", "ctrl+alt+t"}); code != 0 {
 		t.Fatalf("set keys exit %d", code)
 	}
 	if cfg3, _, _ := LoadConfig(path); cfg3.Keys != "ctrl+alt+t" || cfg3.Command != "aplay /tmp/x.wav" {
 		t.Errorf("set keys should keep the command for later: %+v", cfg3)
+	}
+}
+
+func TestCLISetCommandKeepsItsWords(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "c.json")
+	os.WriteFile(path, []byte(`{"action":"enter","run_as":"pi"}`), 0o644)
+	// The program's own --config flag belongs to the command, not to bigredbutton.
+	botCfg := filepath.Join(dir, "bot.yaml")
+	os.WriteFile(botCfg, []byte("players: 4\n"), 0o644)
+	if code := runCLI([]string{"-config", path, "set", "command", "python3", "bot.py", "--config", botCfg}); code != 0 {
+		t.Fatalf("set command exit %d", code)
+	}
+	if data, _ := os.ReadFile(botCfg); string(data) != "players: 4\n" {
+		t.Errorf("bot.yaml was overwritten: %q", data)
+	}
+	if cfg, _, _ := LoadConfig(path); cfg.Command != "python3 bot.py --config "+botCfg || cfg.RunAs != "pi" {
+		t.Errorf("after set command: %+v", cfg)
+	}
+	// Unquoted words keep their boundaries; a single quoted command is stored as given.
+	runCLI([]string{"-config", path, "set", "command", "python3", "/home/pi/My Game/run.py"})
+	if cfg, _, _ := LoadConfig(path); cfg.Command != `python3 '/home/pi/My Game/run.py'` {
+		t.Errorf("path with a space: %q", cfg.Command)
+	}
+	runCLI([]string{"-config", path, "set", "command", `echo "$HOME" >> ~/log`})
+	if cfg, _, _ := LoadConfig(path); cfg.Command != `echo "$HOME" >> ~/log` {
+		t.Errorf("single word: %q", cfg.Command)
+	}
+	runCLI([]string{"-config", path, "set", "text", "Hello", "there"})
+	if cfg, _, _ := LoadConfig(path); cfg.Text != "Hello there" {
+		t.Errorf("text: %q", cfg.Text)
+	}
+}
+
+func TestCLISetRefusesUnreadableConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "c.json")
+	bad := `{"action":"enter","run_as":"pi",}`
+	os.WriteFile(path, []byte(bad), 0o644)
+	if code := runCLI([]string{"-config", path, "set", "command", "aplay x.wav"}); code != 1 {
+		t.Errorf("exit %d, want 1", code)
+	}
+	if data, _ := os.ReadFile(path); string(data) != bad {
+		t.Errorf("an unreadable config must be left alone, got %s", data)
+	}
+}
+
+func TestShellQuoteArgsKeepsCommandsApart(t *testing.T) {
+	if got := shellQuoteArgs([]string{"aplay", "/tmp/x.wav"}); got != "aplay /tmp/x.wav" {
+		t.Errorf("plain words: %s", got)
+	}
+	if got := shellQuoteArgs([]string{"echo", "a\nrm -rf b", "{x}"}); got != "echo 'a\nrm -rf b' '{x}'" {
+		t.Errorf("newline and braces: %q", got)
 	}
 }
 

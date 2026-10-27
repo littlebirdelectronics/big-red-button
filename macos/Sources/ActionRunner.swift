@@ -119,8 +119,7 @@ final class ActionRunner {
         process.executableURL = URL(fileURLWithPath: "/bin/zsh")
         process.arguments = ["-lc", command]
         process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-        if let log = try? FileHandle(forWritingTo: Log.url) {
-            log.seekToEndOfFile()
+        if let log = Log.appendHandle() {
             process.standardOutput = log
             process.standardError = log
         }
