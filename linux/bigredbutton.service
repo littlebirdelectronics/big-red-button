@@ -1,0 +1,13 @@
+[Unit]
+Description=Little Bird Big Red Button
+Documentation=https://littlebirdelectronics.com.au/button
+After=systemd-udevd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/bigredbutton run
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
