@@ -7,7 +7,7 @@ It's a single program with no dependencies. It works on every Raspberry Pi (Zero
 ## Install
 
 ```sh
-curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash
+curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
 ```
 
 This installs `/usr/local/bin/bigredbutton`, a `bigredbutton` systemd service, and a config file at `/etc/bigredbutton.json`. Commands run as the user who ran the installer.
@@ -115,7 +115,7 @@ sudo systemctl start bigredbutton
 ## Uninstall
 
 ```sh
-curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash -s -- --uninstall
+curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash -s -- --uninstall
 ```
 
 Or by hand:

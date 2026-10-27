@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Big Red Button installer for macOS and Linux (including Raspberry Pi).
 #
-#   curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash
-#   curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash -s -- --uninstall
+#   curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
+#   curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash -s -- --uninstall
 #
 # macOS: installs "Big Red Button.app" (a menu bar app) into /Applications and opens it.
 # Linux: installs /usr/local/bin/bigredbutton plus a systemd service; needs sudo.
@@ -139,7 +139,7 @@ install_linux() {
     cat > "$TMP/bigredbutton.service" <<'EOF'
 [Unit]
 Description=Little Bird Big Red Button
-Documentation=https://littlebirdelectronics.com.au/button
+Documentation=https://littlebirdelectronics.com.au/help/big-red-button-setup
 After=systemd-udevd.service
 
 [Service]

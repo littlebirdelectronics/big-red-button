@@ -13,7 +13,7 @@ Out of the box the button is a one-key USB keyboard: press it and it types **Ent
 ## Install (macOS and Linux / Raspberry Pi)
 
 ```sh
-curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash
+curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash
 ```
 
 > **Use the USB-A to USB-C cable that came with the button.** The button doesn't power up on a USB-C to USB-C cable. If your computer only has USB-C ports, use a USB-C to USB-A adapter or hub.
@@ -64,7 +64,7 @@ See [windows/README.md](windows/README.md).
 ## Uninstall
 
 ```sh
-curl -fsSL https://littlebirdelectronics.com.au/button/install.sh | bash -s -- --uninstall
+curl -fsSL https://littlebirdelectronics.com.au/install/big-red-button.sh | bash -s -- --uninstall
 ```
 
 ## Settings file

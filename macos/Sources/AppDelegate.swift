@@ -127,6 +127,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(mute)
 
         menu.addItem(.separator())
+        let colorItem = NSMenuItem(title: "Button Colour", action: nil, keyEquivalent: "")
+        colorItem.submenu = colorMenu()
+        menu.addItem(colorItem)
         let login = item("Open at Login", #selector(toggleLogin))
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
@@ -161,6 +164,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return menu
     }
 
+    private func colorMenu() -> NSMenu {
+        let menu = NSMenu()
+        for color in ButtonColor.allCases {
+            let mi = item(color.title, #selector(chooseColor(_:)))
+            mi.representedObject = color.rawValue
+            mi.state = color == ButtonColor.current ? .on : .off
+            mi.image = StatusIcon.image(color: color, connected: true, pressed: false)
+            menu.addItem(mi)
+        }
+        return menu
+    }
+
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
         let mi = NSMenuItem(title: title, action: action, keyEquivalent: key)
         mi.target = self
@@ -185,6 +200,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         c.sound = name
         applyConfig(c)
         runner.pressed(c)
+    }
+
+    @objc private func chooseColor(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let color = ButtonColor(rawValue: raw) else { return }
+        ButtonColor.current = color
+        refreshIcon()
     }
 
     @objc private func chooseKeys() {
@@ -319,29 +340,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func refreshIcon() {
-        statusItem?.button?.image = StatusIcon.image(connected: monitor.isConnected && monitor.isListening, pressed: isPressed)
+        statusItem?.button?.image = StatusIcon.image(color: ButtonColor.current, connected: monitor.isConnected && monitor.isListening, pressed: isPressed)
         statusItem?.button?.toolTip = "Big Red Button — \(store.config.summary)"
-    }
-}
-
-/// Draws the menu bar icon: a red button when connected, an outline when not.
-enum StatusIcon {
-    static func image(connected: Bool, pressed: Bool) -> NSImage {
-        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
-            let ring = NSBezierPath(ovalIn: rect.insetBy(dx: 1.5, dy: 1.5))
-            ring.lineWidth = 1.5
-            if connected {
-                (pressed ? NSColor.systemRed.highlight(withLevel: 0.35)! : NSColor.systemRed).setFill()
-                NSBezierPath(ovalIn: rect.insetBy(dx: pressed ? 2.5 : 3.5, dy: pressed ? 2.5 : 3.5)).fill()
-                NSColor.labelColor.withAlphaComponent(0.85).setStroke()
-            } else {
-                NSColor.labelColor.withAlphaComponent(0.5).setStroke()
-            }
-            ring.stroke()
-            return true
-        }
-        image.isTemplate = false
-        return image
     }
 }
 

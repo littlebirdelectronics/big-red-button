@@ -1,6 +1,6 @@
 [Unit]
 Description=Little Bird Big Red Button
-Documentation=https://littlebirdelectronics.com.au/button
+Documentation=https://littlebirdelectronics.com.au/help/big-red-button-setup
 After=systemd-udevd.service
 
 [Service]
