@@ -33,7 +33,7 @@ semicolon quote comma period slash grave capslock printscreen volumeup volumedow
 mute playpause next previous stop, plus modifiers ctrl shift alt super.
 
 Commands run as the "run_as" user in the config file. Logs: journalctl -u bigredbutton -f
-Help: https://littlebirdelectronics.com.au/help/big-red-button-setup
+Help: https://littlebirdelectronics.com.au/projects/big-game-button-setup
 `
 
 func main() {

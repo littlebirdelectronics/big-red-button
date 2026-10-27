@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    static let helpURL = URL(string: "https://littlebirdelectronics.com.au/help/big-red-button-setup")!
+    static let helpURL = URL(string: "https://littlebirdelectronics.com.au/projects/big-game-button-setup")!
 
     private let store = ConfigStore()
     private lazy var monitor = ButtonMonitor(device: store.config.resolvedDevice, suppressKey: store.config.suppressesKey)

@@ -10,7 +10,7 @@ set -euo pipefail
 
 REPO="littlebirdelectronics/big-red-button"
 BASE_URL="${BRB_BASE_URL:-https://github.com/$REPO/releases/latest/download}"
-HELP_URL="https://littlebirdelectronics.com.au/help/big-red-button-setup"
+HELP_URL="https://littlebirdelectronics.com.au/projects/big-game-button-setup"
 APP_NAME="Big Red Button.app"
 
 say() { printf '\033[1;31m●\033[0m %s\n' "$*"; }
@@ -139,7 +139,7 @@ install_linux() {
     cat > "$TMP/bigredbutton.service" <<'EOF'
 [Unit]
 Description=Little Bird Big Red Button
-Documentation=https://littlebirdelectronics.com.au/help/big-red-button-setup
+Documentation=https://littlebirdelectronics.com.au/projects/big-game-button-setup
 After=systemd-udevd.service
 
 [Service]
